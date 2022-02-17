@@ -17,7 +17,6 @@ import org.apache.kafka.common.errors.AuthorizationException;
 import org.apache.kafka.common.errors.OutOfOrderSequenceException;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.clients.producer.ProducerConfig;
 
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -29,50 +28,35 @@ public class HelloServerHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         ByteBuf inBuffer = (ByteBuf) msg;
         Properties props = new Properties();
-        String seconds = "" + System.currentTimeMillis();
-        //props.put("bootstrap.servers", Config.KakfaURI);
-        //props.put("transactional.id", seconds);
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Config.KakfaURI);
-        //props.put(ProducerConfig.CLIENT_ID_CONFIG, "transactional-producer");
-        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true); // enable idempotence
-        //props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, seconds); // set transaction id
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        //props.put("sasl.mechanism", "PLAIN");
-        Producer<String, String> producer = new KafkaProducer<>(props);
-                 //,
-                //new StringSerializer(),
-                //new StringSerializer());
-        // Prepare Data to send to Kafka
-        String received = inBuffer.toString(CharsetUtil.UTF_8);
-        String clientIP = ((InetSocketAddress)ctx.channel().remoteAddress()).getAddress().getHostAddress();
-        //JSONObject obj = new JSONObject();
-        //obj.put(clientIP, received);
-        System.out.println("Kakfa message: " + clientIP + ": " + received);
-
-        //producer.initTransactions();
-
+        props.put("bootstrap.servers", Config.KakfaURI);
+        props.put("transactional.id", "my-transactional-id");
+        Producer<String, String> producer = new KafkaProducer<>(props,
+                new StringSerializer(),
+                new StringSerializer());
         try {
-            /*System.out.println("Init Transaction");
+            // Prepare Data to send to Kafka
+            String received = inBuffer.toString(CharsetUtil.UTF_8);
+            String clientIP = ((InetSocketAddress)ctx.channel().remoteAddress()).getAddress().getHostAddress();
+            //JSONObject obj = new JSONObject();
+            //obj.put(clientIP, received);
+            System.out.println("Kakfa message: " + clientIP + ": " + received);
+
+            producer.initTransactions();
             producer.beginTransaction();
-            System.out.println("Begin Transaction");
-            */
             producer.send(new ProducerRecord<>(Config.KafkaTopic, clientIP, received
                                               ));
-            producer.flush();
-            //producer.commitTransaction();
+            producer.commitTransaction();
         } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException e) {
             // We can't recover from these exceptions, so our only option is to close the producer and exit.
            System.out.println("Known Exception");
             producer.close();
         } catch (KafkaException e) {
             // For all other exceptions, just abort the transaction and try again.
-            //producer.abortTransaction();
+            producer.abortTransaction();
             System.out.println("Timeout Exception");
             producer.close();
         }
         finally {
-            System.out.println("Inside finally");
             producer.close();
         }
 

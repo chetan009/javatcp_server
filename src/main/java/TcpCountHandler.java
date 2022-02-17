@@ -10,14 +10,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TcpCountHandler extends ChannelInboundHandlerAdapter {
     private AtomicInteger atomicInteger = new AtomicInteger();
     public TcpCountHandler(){
+        atomicInteger = new AtomicInteger();
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(()->{
-            System.out.println("Current connection = "+ atomicInteger.get());
-        }, 0, 3, TimeUnit.SECONDS);
+            //System.out.println("Current connection = " + atomicInteger.get());
+        }, 0, 1, TimeUnit.SECONDS);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        atomicInteger.incrementAndGet();
+        System.out.println("Increment connection = " + atomicInteger.incrementAndGet());
     }
 
     @Override
