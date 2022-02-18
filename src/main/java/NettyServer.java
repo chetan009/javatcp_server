@@ -21,7 +21,7 @@ public class NettyServer {
         serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             protected void initChannel(SocketChannel socketChannel) {
                 socketChannel.pipeline().addFirst(new TcpCountHandler());
-                socketChannel.pipeline().addLast(new HelloServerHandler());
+                socketChannel.pipeline().addLast(new ServerHandler());
             }
         });
 
