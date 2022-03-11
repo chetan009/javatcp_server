@@ -3,60 +3,180 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.example</groupId>
-    <artifactId>tcp_test</artifactId>
-    <version>1.0-SNAPSHOT</version>
+
+    <parent>
+        <groupId>io.confluent</groupId>
+        <artifactId>rest-utils-parent</artifactId>
+        <version>7.0.1</version>
+    </parent>
+
+    <artifactId>clients-example</artifactId>
+    <packaging>jar</packaging>
+    <version>0.0.1</version>
+
+    <description>
+        Kafka Java clients examples for CCloud.
+    </description>
+
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <java.version>8</java.version>
+        <slf4j-api.version>1.7.6</slf4j-api.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <schemaRegistryUrl>http://localhost:8081</schemaRegistryUrl>
+        <schemaRegistryBasicAuthUserInfo>user:password</schemaRegistryBasicAuthUserInfo>
+        <schemaLocal>src/main/resources/avro/io/confluent/examples/clients/cloud/DataRecordAvro2a.avsc</schemaLocal>
+        <io.confluent.schema-registry.version>${confluent.version.range}</io.confluent.schema-registry.version>
     </properties>
+
+
     <repositories>
         <repository>
             <id>confluent</id>
-            <url>http://packages.confluent.io/maven/</url>
+            <name>Confluent</name>
+            <url>https://packages.confluent.io/maven/</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>3.1.0</version>
+            <version>${kafka.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.51.Final</version>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <version>${io.confluent.schema-registry.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-streams-avro-serde</artifactId>
+            <version>${io.confluent.schema-registry.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-runtime</artifactId>
+            <version>${kafka.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j-api.version}</version>
+        </dependency>
+        <!-- Use a repackaged version of log4j with security patches. Default log4j v1.2 is a transitive dependency of slf4j-log4j12, but it is excluded in common/pom.xml -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>confluent-log4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.confluent/kafka-schema-registry-client -->
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-schema-registry-client</artifactId>
-            <version>6.2.1</version>
-        </dependency>
 
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20180130</version>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.51.Final</version>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <encoding>utf-8</encoding>
+                    <skip>true</skip>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <inherited>true</inherited>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/resources/avro/</sourceDirectory>
+                            <includes>
+                                <include>DataRecordAvro.avsc</include>
+                            </includes>
+                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-schema-registry-maven-plugin</artifactId>
+                <version>${io.confluent.schema-registry.version}</version>
+                <configuration>
+                    <schemaRegistryUrls>
+                        <param>${schemaRegistryUrl}</param>
+                    </schemaRegistryUrls>
+                    <userInfoConfig>${schemaRegistryBasicAuthUserInfo}</userInfoConfig>
+                    <subjects>
+                        <test2-value>${schemaLocal}</test2-value>
+                    </subjects>
+                    <schemaTypes>
+                        <test2-value>AVRO</test2-value>
+                    </schemaTypes>
+                    <outputDirectory/>
+                </configuration>
+                <goals>
+                    <goal>test-compatibility</goal>
+                </goals>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -71,7 +191,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>NettyServer</mainClass>
+                                    <mainClass>ProducerAvroExample</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

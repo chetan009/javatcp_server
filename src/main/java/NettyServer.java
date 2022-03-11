@@ -3,13 +3,25 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.Properties;
 
 public class NettyServer {
+    private static final Logger logger = LogManager.getLogger(NettyServer.class);
     public static void main(String [] args) {
-        new NettyServer().run(Config.BEGIN_PORT, Config.END_PORT);
+        try {
+            final Properties props = KafkaAvroProducer.loadConfig("src/main/resources/application.properties");
+            new NettyServer().run( Integer.parseInt(props.get("tcp_server_port").toString()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    public void run(int beginPort, int endPort) {
-        System.out.println("Server staring...");
+
+    public void run(int port) {
+        logger.info("TCP Server starting....");
         //Configure server thread pool
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workGroup = new NioEventLoopGroup();
@@ -24,12 +36,6 @@ public class NettyServer {
                 socketChannel.pipeline().addLast(new ServerHandler());
             }
         });
-
-        for (; beginPort < endPort; beginPort++) {
-            int port = beginPort;
-            serverBootstrap.bind(port).addListener((ChannelFutureListener) future -> {
-                System.out.println("Server binded port = " + port);
-            });
-        }
+        serverBootstrap.bind(port).addListener((ChannelFutureListener) future -> {logger.info("Server binded port = " + port);});
     }
 }

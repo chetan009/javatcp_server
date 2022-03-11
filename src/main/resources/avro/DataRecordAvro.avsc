@@ -1,0 +1,9 @@
+{"namespace": "testRecord",
+        "type": "record",
+        "name": "DataRecordAvro",
+        "fields": [
+        {"name": "payload", "type": "string"},
+        {"name": "ip", "type": "string"},
+        {"name": "msg_type", "type": "long"}
+        ]
+        }
